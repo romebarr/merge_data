@@ -31,4 +31,10 @@ logs/
 .idea/
 .vscode/
 
+# Streamlit
+.streamlit/secrets.toml
+
+# Test files (opcional, descomentar si no quieres subir tests)
+# test_merge_utils.py
+
 
