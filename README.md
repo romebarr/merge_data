@@ -20,11 +20,23 @@ Esta aplicación permite realizar operaciones de merge (cruce) entre dos bases d
 - Python 3.8 o superior
 - pip (gestor de paquetes de Python)
 
-## Instalación
+## 🚀 Despliegue Rápido en Streamlit Cloud
+
+**Tu app ya está lista para desplegarse:**
+
+1. Ve a [share.streamlit.io](https://share.streamlit.io)
+2. Conecta tu repositorio: `romebarr/merge_data`
+3. Selecciona `main` como rama
+4. Especifica `app.py` como archivo principal
+5. ¡Despliega!
+
+Ver [DEPLOY.md](DEPLOY.md) para instrucciones detalladas.
+
+## Instalación Local
 
 1. Clona el repositorio:
 ```bash
-git clone <URL_DE_TU_REPO>
+git clone https://github.com/romebarr/merge_data.git
 cd merge_data
 ```
 
