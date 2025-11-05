@@ -19,6 +19,7 @@ from merge_utils import (
     detect_duplicates,
     analyze_data_quality,
     aggregate_columns,
+    fix_duplicate_columns,
 )
 
 
@@ -577,6 +578,8 @@ with tab3:
                                 key_b=merge_keys_b[0] if isinstance(merge_keys_b, list) else merge_keys_b,
                                 suffixes=suffixes,
                             )
+                            # Corregir columnas duplicadas si existen
+                            filtered = fix_duplicate_columns(filtered)
                             st.session_state["resultado"] = filtered
                             stats = build_summary_stats(
                                 df_a, df_b,
@@ -588,6 +591,8 @@ with tab3:
                         elif how == "anti A vs B":
                             result = anti_join(df_a, df_b, merge_keys_a, merge_keys_b, direction="A_not_in_B")
                             filtered = result.loc[:, [c for c in cols_from_a if c in result.columns]]
+                            # Corregir columnas duplicadas si existen
+                            filtered = fix_duplicate_columns(filtered)
                             st.session_state["resultado"] = filtered
                             stats = build_summary_stats(
                                 df_a, df_b,
@@ -599,6 +604,8 @@ with tab3:
                         elif how == "anti B vs A":
                             result = anti_join(df_a, df_b, merge_keys_a, merge_keys_b, direction="B_not_in_A")
                             filtered = result.loc[:, [c for c in cols_from_b if c in result.columns]]
+                            # Corregir columnas duplicadas si existen
+                            filtered = fix_duplicate_columns(filtered)
                             st.session_state["resultado"] = filtered
                             stats = build_summary_stats(
                                 df_a, df_b,
@@ -666,6 +673,11 @@ with tab3:
                     mask = mask | df_display[col].astype(str).str.contains(search_term, case=False, na=False)
             df_display = df_display[mask]
             st.info(f"Mostrando {len(df_display):,} filas que coinciden con '{search_term}'")
+        
+        # Verificar y corregir columnas duplicadas antes de mostrar
+        if df_display.columns.duplicated().any():
+            st.warning("⚠️ Se detectaron columnas con nombres duplicados. Se renombrarán automáticamente para la visualización.")
+            df_display = fix_duplicate_columns(df_display)
         
         st.write(f"**Total de filas:** {len(df_result):,}")
         if len(df_display) > 0:

@@ -537,3 +537,35 @@ def aggregate_columns(
     return df.groupby(group_by).agg(agg_dict).reset_index()
 
 
+def fix_duplicate_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Rename duplicate column names to make them unique.
+    Adds a suffix _1, _2, etc. to duplicate column names.
+    """
+    df = df.copy()
+    
+    # Get column names
+    cols = list(df.columns)
+    seen = {}
+    new_cols = []
+    
+    for col in cols:
+        if col in seen:
+            # Increment counter for this column name
+            seen[col] += 1
+            new_col = f"{col}_{seen[col]}"
+        else:
+            # First time seeing this column
+            seen[col] = 0
+            new_col = col
+        
+        new_cols.append(new_col)
+    
+    # Only rename if there were duplicates
+    if new_cols != cols:
+        df.columns = new_cols
+        logger.info(f"Renombradas columnas duplicadas: {len([c for c in seen.values() if c > 0])} duplicados encontrados")
+    
+    return df
+
+
