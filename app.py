@@ -47,6 +47,7 @@ def init_state():
         "data_quality_b": None,
         "validation_results": None,
         "should_generate": False,
+        "preserve_format": True,  # Por defecto preservar formatos
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -61,6 +62,14 @@ with st.sidebar:
     st.header("⚙️ Configuración")
     
     max_file_size = st.number_input("Tamaño máximo de archivo (MB)", min_value=10, max_value=500, value=100, step=10)
+    
+    preserve_format_flag = st.checkbox(
+        "Preservar formatos originales (leer todo como texto)", 
+        value=st.session_state.get("preserve_format", True), 
+        key="preserve_format_checkbox",
+        help="Si está activado, todos los valores se leerán como texto para preservar el formato original. Si está desactivado, pandas intentará inferir automáticamente los tipos de datos."
+    )
+    st.session_state["preserve_format"] = preserve_format_flag
     
     normalize_data_flag = st.checkbox("Normalizar datos (quitar espacios)", value=st.session_state.get("normalize_data", False), key="normalize_data_checkbox")
     st.session_state["normalize_data"] = normalize_data_flag
@@ -121,13 +130,15 @@ with tab1:
         if uploaded_a is not None:
             try:
                 with st.spinner("Cargando Base A..."):
-                    df_a = load_file(uploaded_a, max_size_mb=max_file_size)
+                    preserve_format = st.session_state.get("preserve_format", True)
+                    df_a = load_file(uploaded_a, max_size_mb=max_file_size, preserve_format=preserve_format)
                     st.session_state["df_a"] = df_a
                     
                     # Analizar calidad de datos
                     st.session_state["data_quality_a"] = analyze_data_quality(df_a)
                     
-                st.success(f"✅ Base A cargada: {len(df_a):,} filas × {len(df_a.columns)} columnas")
+                preserve_status = "con formatos preservados" if preserve_format else "con tipos inferidos"
+                st.success(f"✅ Base A cargada: {len(df_a):,} filas × {len(df_a.columns)} columnas ({preserve_status})")
                 
                 # Mostrar información de calidad
                 quality_a = st.session_state["data_quality_a"]
@@ -166,13 +177,15 @@ with tab1:
         if uploaded_b is not None:
             try:
                 with st.spinner("Cargando Base B..."):
-                    df_b = load_file(uploaded_b, max_size_mb=max_file_size)
+                    preserve_format = st.session_state.get("preserve_format", True)
+                    df_b = load_file(uploaded_b, max_size_mb=max_file_size, preserve_format=preserve_format)
                     st.session_state["df_b"] = df_b
                     
                     # Analizar calidad de datos
                     st.session_state["data_quality_b"] = analyze_data_quality(df_b)
                     
-                st.success(f"✅ Base B cargada: {len(df_b):,} filas × {len(df_b.columns)} columnas")
+                preserve_status = "con formatos preservados" if preserve_format else "con tipos inferidos"
+                st.success(f"✅ Base B cargada: {len(df_b):,} filas × {len(df_b.columns)} columnas ({preserve_status})")
                 
                 # Mostrar información de calidad
                 quality_b = st.session_state["data_quality_b"]

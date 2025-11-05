@@ -23,13 +23,19 @@ def validate_file_size(uploaded_file, max_size_mb: int = 100) -> bool:
     return True
 
 
-def load_file(uploaded_file, max_size_mb: int = 100) -> pd.DataFrame:
+def load_file(uploaded_file, max_size_mb: int = 100, preserve_format: bool = False) -> pd.DataFrame:
     """
     Load a CSV or Excel file-like object into a pandas DataFrame.
 
     - Supports .csv and .xlsx (by extension).
     - Tries to infer encoding for CSV using pandas defaults.
     - Validates file size.
+    
+    Args:
+        uploaded_file: File-like object to read
+        max_size_mb: Maximum file size in MB
+        preserve_format: If True, reads all columns as text to preserve original formats.
+                        If False, pandas will infer data types automatically.
     """
     if uploaded_file is None:
         raise ValueError("No file provided")
@@ -44,19 +50,58 @@ def load_file(uploaded_file, max_size_mb: int = 100) -> pd.DataFrame:
 
     try:
         if name.endswith(".csv"):
-            df = pd.read_csv(uploaded_file, encoding='utf-8')
+            if preserve_format:
+                # Leer todo como texto para preservar formatos
+                df = pd.read_csv(
+                    uploaded_file, 
+                    encoding='utf-8',
+                    dtype=str,
+                    keep_default_na=False  # No convertir strings vacíos a NaN
+                )
+                # Convertir strings vacíos a NaN después de leer
+                df = df.replace('', pd.NA)
+            else:
+                df = pd.read_csv(uploaded_file, encoding='utf-8')
         elif name.endswith((".xlsx", ".xls")):
-            df = pd.read_excel(uploaded_file)
+            if preserve_format:
+                # Para Excel, leer todo como texto
+                df = pd.read_excel(
+                    uploaded_file,
+                    dtype=str,
+                    na_values=[''],  # Tratar strings vacíos como NaN
+                    keep_default_na=False
+                )
+                # Convertir strings vacíos a NaN después de leer
+                df = df.replace('', pd.NA)
+            else:
+                df = pd.read_excel(uploaded_file)
         else:
             # Fallback: try CSV first, then Excel
             uploaded_file.seek(0)
             try:
-                df = pd.read_csv(uploaded_file, encoding='utf-8')
+                if preserve_format:
+                    df = pd.read_csv(
+                        uploaded_file, 
+                        encoding='utf-8',
+                        dtype=str,
+                        keep_default_na=False
+                    )
+                    df = df.replace('', pd.NA)
+                else:
+                    df = pd.read_csv(uploaded_file, encoding='utf-8')
             except Exception:
                 uploaded_file.seek(0)
-                df = pd.read_excel(uploaded_file)
+                if preserve_format:
+                    df = pd.read_excel(
+                        uploaded_file,
+                        dtype=str,
+                        keep_default_na=False
+                    )
+                    df = df.replace('', pd.NA)
+                else:
+                    df = pd.read_excel(uploaded_file)
         
-        logger.info(f"Archivo cargado: {len(df)} filas, {len(df.columns)} columnas")
+        logger.info(f"Archivo cargado: {len(df)} filas, {len(df.columns)} columnas (preserve_format={preserve_format})")
         return df
     except Exception as e:
         logger.error(f"Error cargando archivo: {e}")
