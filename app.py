@@ -62,7 +62,8 @@ with st.sidebar:
     
     max_file_size = st.number_input("Tamaño máximo de archivo (MB)", min_value=10, max_value=500, value=100, step=10)
     
-    st.session_state["normalize_data"] = st.checkbox("Normalizar datos (quitar espacios)", value=False)
+    normalize_data_flag = st.checkbox("Normalizar datos (quitar espacios)", value=st.session_state.get("normalize_data", False), key="normalize_data_checkbox")
+    st.session_state["normalize_data"] = normalize_data_flag
     
     st.divider()
     st.header("💾 Guardar/Cargar")
@@ -274,13 +275,14 @@ with tab2:
             value=st.session_state.get("use_multiple_keys", False),
             key="use_multiple_keys"
         )
-        st.session_state["use_multiple_keys"] = use_multiple
+        # No necesitamos asignar manualmente, Streamlit lo hace automáticamente con key=
         
         col1, col2 = st.columns(2)
         
         with col1:
             st.subheader("Columnas clave - Base A")
-            if use_multiple:
+            # Usar el valor del estado directamente
+            if st.session_state.get("use_multiple_keys", False):
                 keys_a = st.multiselect(
                     "Selecciona las columnas clave de Base A",
                     options=list(df_a.columns),
@@ -327,7 +329,8 @@ with tab2:
         
         with col2:
             st.subheader("Columnas clave - Base B")
-            if use_multiple:
+            # Usar el valor del estado directamente
+            if st.session_state.get("use_multiple_keys", False):
                 keys_b = st.multiselect(
                     "Selecciona las columnas clave de Base B",
                     options=list(df_b.columns),
@@ -382,8 +385,9 @@ with tab2:
             st.divider()
             st.subheader("🔍 Validación de Datos")
             
-            validation_keys_a = keys_a if use_multiple else [key_a]
-            validation_keys_b = keys_b if use_multiple else [key_b]
+            use_multiple_flag = st.session_state.get("use_multiple_keys", False)
+            validation_keys_a = keys_a if use_multiple_flag else [key_a]
+            validation_keys_b = keys_b if use_multiple_flag else [key_b]
             
             with st.spinner("Validando datos..."):
                 validation = validate_data_before_merge(df_a, df_b, validation_keys_a, validation_keys_b)
@@ -494,13 +498,13 @@ with tab3:
                 st.session_state["df_a"] = df_a
                 st.session_state["df_b"] = df_b
             
-            use_multiple = st.session_state.get("use_multiple_keys", False)
+            use_multiple_flag = st.session_state.get("use_multiple_keys", False)
             keys_a = st.session_state.get("join_keys_a", [])
             keys_b = st.session_state.get("join_keys_b", [])
             key_a = st.session_state.get("join_key_a")
             key_b = st.session_state.get("join_key_b")
             
-            if use_multiple:
+            if use_multiple_flag:
                 if not keys_a or not keys_b:
                     st.error("Debes seleccionar las columnas clave para A y B.")
                 elif len(keys_a) != len(keys_b):
@@ -515,7 +519,7 @@ with tab3:
                     merge_keys_a = key_a
                     merge_keys_b = key_b
             
-            if (use_multiple and keys_a and keys_b and len(keys_a) == len(keys_b)) or (not use_multiple and key_a and key_b):
+            if (use_multiple_flag and keys_a and keys_b and len(keys_a) == len(keys_b)) or (not use_multiple_flag and key_a and key_b):
                 how = st.session_state["join_type"]
                 suffixes = st.session_state.get("suffixes", ("_A", "_B"))
                 cols_from_a = st.session_state.get("cols_from_a", [])
