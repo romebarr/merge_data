@@ -444,19 +444,46 @@ with tab2:
         
         c1, c2 = st.columns(2)
         with c1:
+            # Obtener valores guardados y filtrar solo los válidos
+            saved_cols_a = st.session_state.get("cols_from_a", [])
+            if not isinstance(saved_cols_a, list):
+                saved_cols_a = []
+            
+            # Filtrar para mantener solo columnas que existen en las opciones actuales
+            valid_default_a = [col for col in saved_cols_a if col in cols_a_default]
+            # Si no hay valores válidos guardados, usar todas las columnas por defecto
+            if not valid_default_a and cols_a_default:
+                valid_default_a = cols_a_default
+            
             cols_from_a = st.multiselect(
                 "¿Qué columnas quieres conservar de Base A?",
                 options=cols_a_default,
-                default=st.session_state.get("cols_from_a") or cols_a_default,
-                key="cols_from_a",
+                default=valid_default_a,
+                key="cols_from_a_select",
             )
+            # Guardar en session_state
+            st.session_state["cols_from_a"] = cols_from_a
+            
         with c2:
+            # Obtener valores guardados y filtrar solo los válidos
+            saved_cols_b = st.session_state.get("cols_from_b", [])
+            if not isinstance(saved_cols_b, list):
+                saved_cols_b = []
+            
+            # Filtrar para mantener solo columnas que existen en las opciones actuales
+            valid_default_b = [col for col in saved_cols_b if col in cols_b_default]
+            # Si no hay valores válidos guardados, usar todas las columnas por defecto
+            if not valid_default_b and cols_b_default:
+                valid_default_b = cols_b_default
+            
             cols_from_b = st.multiselect(
                 "¿Qué columnas quieres conservar de Base B?",
                 options=cols_b_default,
-                default=st.session_state.get("cols_from_b") or cols_b_default,
-                key="cols_from_b",
+                default=valid_default_b,
+                key="cols_from_b_select",
             )
+            # Guardar en session_state
+            st.session_state["cols_from_b"] = cols_from_b
         
         # Botón de generar
         st.divider()
