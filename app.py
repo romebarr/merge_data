@@ -13,6 +13,7 @@ from merge_utils import (
     to_excel_bytes,
     to_csv_bytes,
     sanitize_filename,
+    extract_base_name,
     detect_key_columns,
     validate_data_before_merge,
     normalize_data,
@@ -30,6 +31,10 @@ def init_state():
     defaults = {
         "df_a": None,
         "df_b": None,
+        "file_name_a": None,  # Nombre del archivo A
+        "file_name_b": None,  # Nombre del archivo B
+        "base_name_a": "Base A",  # Nombre amigable para Base A
+        "base_name_b": "Base B",  # Nombre amigable para Base B
         "join_key_a": None,
         "join_key_b": None,
         "join_keys_a": [],  # Múltiples columnas
@@ -135,11 +140,18 @@ with tab1:
                     df_a = load_file(uploaded_a, max_size_mb=max_file_size, preserve_format=preserve_format)
                     st.session_state["df_a"] = df_a
                     
+                    # Guardar nombre del archivo y extraer nombre amigable
+                    file_name_a = uploaded_a.name
+                    base_name_a = extract_base_name(file_name_a)
+                    st.session_state["file_name_a"] = file_name_a
+                    st.session_state["base_name_a"] = base_name_a if base_name_a else "Base A"
+                    
                     # Analizar calidad de datos
                     st.session_state["data_quality_a"] = analyze_data_quality(df_a)
                     
                 preserve_status = "con formatos preservados" if preserve_format else "con tipos inferidos"
-                st.success(f"✅ Base A cargada: {len(df_a):,} filas × {len(df_a.columns)} columnas ({preserve_status})")
+                base_name_display = st.session_state.get("base_name_a", "Base A")
+                st.success(f"✅ {base_name_display} cargada: {len(df_a):,} filas × {len(df_a.columns)} columnas ({preserve_status})")
                 
                 # Mostrar información de calidad
                 quality_a = st.session_state["data_quality_a"]
@@ -182,11 +194,18 @@ with tab1:
                     df_b = load_file(uploaded_b, max_size_mb=max_file_size, preserve_format=preserve_format)
                     st.session_state["df_b"] = df_b
                     
+                    # Guardar nombre del archivo y extraer nombre amigable
+                    file_name_b = uploaded_b.name
+                    base_name_b = extract_base_name(file_name_b)
+                    st.session_state["file_name_b"] = file_name_b
+                    st.session_state["base_name_b"] = base_name_b if base_name_b else "Base B"
+                    
                     # Analizar calidad de datos
                     st.session_state["data_quality_b"] = analyze_data_quality(df_b)
                     
                 preserve_status = "con formatos preservados" if preserve_format else "con tipos inferidos"
-                st.success(f"✅ Base B cargada: {len(df_b):,} filas × {len(df_b.columns)} columnas ({preserve_status})")
+                base_name_display = st.session_state.get("base_name_b", "Base B")
+                st.success(f"✅ {base_name_display} cargada: {len(df_b):,} filas × {len(df_b.columns)} columnas ({preserve_status})")
                 
                 # Mostrar información de calidad
                 quality_b = st.session_state["data_quality_b"]
@@ -220,15 +239,17 @@ with tab1:
     # Comparación visual de las bases
     df_a = st.session_state.get("df_a")
     df_b = st.session_state.get("df_b")
+    base_name_a = st.session_state.get("base_name_a", "Base A")
+    base_name_b = st.session_state.get("base_name_b", "Base B")
     
     if df_a is not None and df_b is not None:
         st.divider()
         st.subheader("🔍 Comparación de Bases")
         comp_col1, comp_col2, comp_col3 = st.columns(3)
         with comp_col1:
-            st.metric("Filas Base A", f"{len(df_a):,}")
+            st.metric(f"Filas {base_name_a}", f"{len(df_a):,}")
         with comp_col2:
-            st.metric("Filas Base B", f"{len(df_b):,}")
+            st.metric(f"Filas {base_name_b}", f"{len(df_b):,}")
         with comp_col3:
             diff = abs(len(df_a) - len(df_b))
             st.metric("Diferencia", f"{diff:,}")
@@ -265,17 +286,20 @@ with tab2:
     if df_a is None or df_b is None:
         st.warning("⚠️ Por favor, carga ambas bases de datos en la pestaña 'Cargar Datos'")
     else:
+        base_name_a = st.session_state.get("base_name_a", "Base A")
+        base_name_b = st.session_state.get("base_name_b", "Base B")
+        
         # Normalización de datos
         if st.session_state.get("normalize_data", False):
             st.info("ℹ️ La normalización de datos está activada. Se eliminarán espacios en blanco.")
             normalize_cols_a = st.multiselect(
-                "Columnas a normalizar en Base A (dejar vacío para todas)",
+                f"Columnas a normalizar en {base_name_a} (dejar vacío para todas)",
                 options=list(df_a.columns),
                 default=[],
                 key="norm_cols_a"
             )
             normalize_cols_b = st.multiselect(
-                "Columnas a normalizar en Base B (dejar vacío para todas)",
+                f"Columnas a normalizar en {base_name_b} (dejar vacío para todas)",
                 options=list(df_b.columns),
                 default=[],
                 key="norm_cols_b"
@@ -294,11 +318,11 @@ with tab2:
         col1, col2 = st.columns(2)
         
         with col1:
-            st.subheader("Columnas clave - Base A")
+            st.subheader(f"Columnas clave - {base_name_a}")
             # Usar el valor del estado directamente
             if st.session_state.get("use_multiple_keys", False):
                 keys_a = st.multiselect(
-                    "Selecciona las columnas clave de Base A",
+                    f"Selecciona las columnas clave de {base_name_a}",
                     options=list(df_a.columns),
                     default=st.session_state.get("join_keys_a", []),
                     key="select_keys_a",
@@ -315,7 +339,7 @@ with tab2:
                         pass
                 
                 key_a = st.selectbox(
-                    "¿Cuál es la columna clave de Base A?",
+                    f"¿Cuál es la columna clave de {base_name_a}?",
                     options=list(df_a.columns),
                     index=default_idx,
                     key="select_key_a",
@@ -342,11 +366,11 @@ with tab2:
                         st.warning(f"⚠️ Esta columna tiene {dup_count:,} valores duplicados. Esto puede causar filas duplicadas en el resultado.")
         
         with col2:
-            st.subheader("Columnas clave - Base B")
+            st.subheader(f"Columnas clave - {base_name_b}")
             # Usar el valor del estado directamente
             if st.session_state.get("use_multiple_keys", False):
                 keys_b = st.multiselect(
-                    "Selecciona las columnas clave de Base B",
+                    f"Selecciona las columnas clave de {base_name_b}",
                     options=list(df_b.columns),
                     default=st.session_state.get("join_keys_b", []),
                     key="select_keys_b",
@@ -363,7 +387,7 @@ with tab2:
                         pass
                 
                 key_b = st.selectbox(
-                    "¿Cuál es la columna clave de Base B?",
+                    f"¿Cuál es la columna clave de {base_name_b}?",
                     options=list(df_b.columns),
                     index=default_idx,
                     key="select_key_b",
@@ -410,12 +434,16 @@ with tab2:
             if validation["errors"]:
                 st.error("❌ Errores encontrados:")
                 for error in validation["errors"]:
-                    st.error(f"  • {error}")
+                    # Reemplazar referencias genéricas con nombres reales
+                    error_display = error.replace("Base A", base_name_a).replace("Base B", base_name_b)
+                    st.error(f"  • {error_display}")
             
             if validation["warnings"]:
                 st.warning("⚠️ Advertencias:")
                 for warning in validation["warnings"]:
-                    st.warning(f"  • {warning}")
+                    # Reemplazar referencias genéricas con nombres reales
+                    warning_display = warning.replace("Base A", base_name_a).replace("Base B", base_name_b)
+                    st.warning(f"  • {warning_display}")
             
             if not validation["errors"] and not validation["warnings"]:
                 st.success("✅ Validación exitosa. Los datos están listos para el merge.")
@@ -424,20 +452,21 @@ with tab2:
                 with st.expander("ℹ️ Información adicional"):
                     if "overlap" in validation["info"]:
                         st.metric("Coincidencias esperadas", f"{validation['info']['overlap']:,}")
-                        st.metric("Llaves únicas en A", f"{validation['info']['unique_a']:,}")
-                        st.metric("Llaves únicas en B", f"{validation['info']['unique_b']:,}")
+                        st.metric(f"Llaves únicas en {base_name_a}", f"{validation['info']['unique_a']:,}")
+                        st.metric(f"Llaves únicas en {base_name_b}", f"{validation['info']['unique_b']:,}")
         
         # Tipo de join
         st.divider()
         st.subheader("Paso 3: Elegir tipo de join")
         
+        # Crear opciones de join dinámicas con nombres reales
         join_options = {
-            "inner": "Solo filas que coinciden en ambas bases",
-            "left": "Todas las filas de A + coincidencias de B",
-            "right": "Todas las filas de B + coincidencias de A",
-            "outer": "Todas las filas de ambas bases",
-            "anti A vs B": "Filas en A que NO están en B",
-            "anti B vs A": "Filas en B que NO están en A",
+            "inner": f"Solo filas que coinciden en {base_name_a} y {base_name_b}",
+            "left": f"Todas las filas de {base_name_a} + coincidencias de {base_name_b}",
+            "right": f"Todas las filas de {base_name_b} + coincidencias de {base_name_a}",
+            "outer": f"Todas las filas de {base_name_a} y {base_name_b}",
+            "anti A vs B": f"Filas en {base_name_a} que NO están en {base_name_b}",
+            "anti B vs A": f"Filas en {base_name_b} que NO están en {base_name_a}",
         }
         
         selected_join = st.selectbox(
@@ -470,7 +499,7 @@ with tab2:
                 valid_default_a = cols_a_default
             
             cols_from_a = st.multiselect(
-                "¿Qué columnas quieres conservar de Base A?",
+                f"¿Qué columnas quieres conservar de {base_name_a}?",
                 options=cols_a_default,
                 default=valid_default_a,
                 key="cols_from_a_select",
@@ -491,7 +520,7 @@ with tab2:
                 valid_default_b = cols_b_default
             
             cols_from_b = st.multiselect(
-                "¿Qué columnas quieres conservar de Base B?",
+                f"¿Qué columnas quieres conservar de {base_name_b}?",
                 options=cols_b_default,
                 default=valid_default_b,
                 key="cols_from_b_select",
@@ -635,21 +664,27 @@ with tab3:
     
     # Mostrar resultado
     if st.session_state.get("resultado") is not None:
+        base_name_a = st.session_state.get("base_name_a", "Base A")
+        base_name_b = st.session_state.get("base_name_b", "Base B")
+        join_type = st.session_state.get("join_type", "inner")
+        
         st.subheader("📊 Resumen y Estadísticas")
         stats = st.session_state.get("stats", {})
         
         m1, m2, m3, m4 = st.columns(4)
-        m1.metric("Filas en Base A", f"{stats.get('rows_a', 0):,}")
-        m2.metric("Filas en Base B", f"{stats.get('rows_b', 0):,}")
+        m1.metric(f"Filas en {base_name_a}", f"{stats.get('rows_a', 0):,}")
+        m2.metric(f"Filas en {base_name_b}", f"{stats.get('rows_b', 0):,}")
         m3.metric("Filas resultado", f"{stats.get('rows_result', 0):,}")
-        m4.metric("Llaves A ∩ B", f"{stats.get('keys_matched', 0):,}")
+        m4.metric(f"Llaves {base_name_a} ∩ {base_name_b}", f"{stats.get('keys_matched', 0):,}")
         
         m5, m6 = st.columns(2)
-        m5.metric("Llaves únicas en A", f"{stats.get('unique_keys_a', 0):,}")
-        m6.metric("Llaves únicas en B", f"{stats.get('unique_keys_b', 0):,}")
+        m5.metric(f"Llaves únicas en {base_name_a}", f"{stats.get('unique_keys_a', 0):,}")
+        m6.metric(f"Llaves únicas en {base_name_b}", f"{stats.get('unique_keys_b', 0):,}")
         
-        if st.session_state.get("join_type") in {"anti A vs B", "anti B vs A"}:
-            st.metric("Registros excluidos", f"{stats.get('excluded_rows', 0):,}")
+        if join_type == "anti A vs B":
+            st.metric(f"Registros de {base_name_a} que NO están en {base_name_b}", f"{stats.get('excluded_rows', 0):,}")
+        elif join_type == "anti B vs A":
+            st.metric(f"Registros de {base_name_b} que NO están en {base_name_a}", f"{stats.get('excluded_rows', 0):,}")
         
         st.divider()
         st.subheader("🔍 Vista Previa y Búsqueda")

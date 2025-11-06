@@ -339,6 +339,32 @@ def sanitize_filename(filename: str) -> str:
     return filename
 
 
+def extract_base_name(filename: str) -> str:
+    """
+    Extract a friendly base name from a filename.
+    Removes extension and path, keeps only the base name.
+    """
+    if not filename:
+        return ""
+    
+    # Get just the filename without path
+    base = filename.split('/')[-1] if '/' in filename else filename
+    base = base.split('\\')[-1] if '\\' in base else base
+    
+    # Remove extension
+    if '.' in base:
+        base = '.'.join(base.split('.')[:-1])
+    
+    # Remove leading/trailing spaces
+    base = base.strip()
+    
+    # If empty after processing, return a default
+    if not base:
+        return "Archivo"
+    
+    return base
+
+
 def detect_key_columns(df: pd.DataFrame) -> List[str]:
     """
     Detect potential key columns by looking for common patterns.
