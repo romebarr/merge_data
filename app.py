@@ -136,27 +136,27 @@ with tab1:
         )
         if uploaded_a is not None:
             try:
-                with st.spinner("Cargando Base A..."):
+                # Guardar nombre del archivo y extraer nombre amigable primero
+                file_name_a = uploaded_a.name
+                base_name_a = extract_base_name(file_name_a)
+                st.session_state["file_name_a"] = file_name_a
+                st.session_state["base_name_a"] = base_name_a if base_name_a else "Base A"
+                base_name_display_a = st.session_state.get("base_name_a", "Base A")
+                
+                with st.spinner(f"Cargando {base_name_display_a}..."):
                     preserve_format = st.session_state.get("preserve_format", True)
                     df_a = load_file(uploaded_a, max_size_mb=max_file_size, preserve_format=preserve_format)
                     st.session_state["df_a"] = df_a
-                    
-                    # Guardar nombre del archivo y extraer nombre amigable
-                    file_name_a = uploaded_a.name
-                    base_name_a = extract_base_name(file_name_a)
-                    st.session_state["file_name_a"] = file_name_a
-                    st.session_state["base_name_a"] = base_name_a if base_name_a else "Base A"
                     
                     # Analizar calidad de datos
                     st.session_state["data_quality_a"] = analyze_data_quality(df_a)
                     
                 preserve_status = "con formatos preservados" if preserve_format else "con tipos inferidos"
-                base_name_display = st.session_state.get("base_name_a", "Base A")
-                st.success(f"✅ {base_name_display} cargada: {len(df_a):,} filas × {len(df_a.columns)} columnas ({preserve_status})")
+                st.success(f"✅ {base_name_display_a} cargada: {len(df_a):,} filas × {len(df_a.columns)} columnas ({preserve_status})")
                 
                 # Mostrar información de calidad
                 quality_a = st.session_state["data_quality_a"]
-                with st.expander("📊 Análisis de calidad de Base A"):
+                with st.expander(f"📊 Análisis de calidad de {base_name_display_a}"):
                     st.write(f"**Memoria:** {quality_a['memory_usage_mb']:.2f} MB")
                     st.write(f"**Columnas con nulos:**")
                     null_cols = {k: f"{v:.1f}%" for k, v in quality_a['null_percentages'].items() if v > 0}
@@ -180,7 +180,8 @@ with tab1:
                             st.write(f"{i}. {col}")
                 
             except Exception as e:
-                st.error(f"❌ Error leyendo Base A: {e}")
+                base_name_a_error = st.session_state.get("base_name_a", "Base A")
+                st.error(f"❌ Error leyendo {base_name_a_error}: {e}")
                 st.session_state["df_a"] = None
     
     with col_b:
@@ -191,27 +192,27 @@ with tab1:
         )
         if uploaded_b is not None:
             try:
-                with st.spinner("Cargando Base B..."):
+                # Guardar nombre del archivo y extraer nombre amigable primero
+                file_name_b = uploaded_b.name
+                base_name_b = extract_base_name(file_name_b)
+                st.session_state["file_name_b"] = file_name_b
+                st.session_state["base_name_b"] = base_name_b if base_name_b else "Base B"
+                base_name_display_b = st.session_state.get("base_name_b", "Base B")
+                
+                with st.spinner(f"Cargando {base_name_display_b}..."):
                     preserve_format = st.session_state.get("preserve_format", True)
                     df_b = load_file(uploaded_b, max_size_mb=max_file_size, preserve_format=preserve_format)
                     st.session_state["df_b"] = df_b
-                    
-                    # Guardar nombre del archivo y extraer nombre amigable
-                    file_name_b = uploaded_b.name
-                    base_name_b = extract_base_name(file_name_b)
-                    st.session_state["file_name_b"] = file_name_b
-                    st.session_state["base_name_b"] = base_name_b if base_name_b else "Base B"
                     
                     # Analizar calidad de datos
                     st.session_state["data_quality_b"] = analyze_data_quality(df_b)
                     
                 preserve_status = "con formatos preservados" if preserve_format else "con tipos inferidos"
-                base_name_display = st.session_state.get("base_name_b", "Base B")
-                st.success(f"✅ {base_name_display} cargada: {len(df_b):,} filas × {len(df_b.columns)} columnas ({preserve_status})")
+                st.success(f"✅ {base_name_display_b} cargada: {len(df_b):,} filas × {len(df_b.columns)} columnas ({preserve_status})")
                 
                 # Mostrar información de calidad
                 quality_b = st.session_state["data_quality_b"]
-                with st.expander("📊 Análisis de calidad de Base B"):
+                with st.expander(f"📊 Análisis de calidad de {base_name_display_b}"):
                     st.write(f"**Memoria:** {quality_b['memory_usage_mb']:.2f} MB")
                     st.write(f"**Columnas con nulos:**")
                     null_cols = {k: f"{v:.1f}%" for k, v in quality_b['null_percentages'].items() if v > 0}
@@ -235,7 +236,8 @@ with tab1:
                             st.write(f"{i}. {col}")
                 
             except Exception as e:
-                st.error(f"❌ Error leyendo Base B: {e}")
+                base_name_b_error = st.session_state.get("base_name_b", "Base B")
+                st.error(f"❌ Error leyendo {base_name_b_error}: {e}")
                 st.session_state["df_b"] = None
     
     # Comparación visual de las bases
@@ -268,14 +270,14 @@ with tab1:
                 with st.expander("Ver columnas comunes"):
                     st.write(list(common_cols))
         with comp_col5:
-            st.warning(f"Solo en A: {len(unique_a)}")
+            st.warning(f"Solo en {base_name_a}: {len(unique_a)}")
             if len(unique_a) > 0:
-                with st.expander("Ver columnas únicas de A"):
+                with st.expander(f"Ver columnas únicas de {base_name_a}"):
                     st.write(list(unique_a))
         with comp_col6:
-            st.warning(f"Solo en B: {len(unique_b)}")
+            st.warning(f"Solo en {base_name_b}: {len(unique_b)}")
             if len(unique_b) > 0:
-                with st.expander("Ver columnas únicas de B"):
+                with st.expander(f"Ver columnas únicas de {base_name_b}"):
                     st.write(list(unique_b))
 
 
@@ -547,9 +549,11 @@ with tab3:
         st.session_state["should_generate"] = False  # Reset flag
         df_a = st.session_state.get("df_a")
         df_b = st.session_state.get("df_b")
+        base_name_a = st.session_state.get("base_name_a", "Base A")
+        base_name_b = st.session_state.get("base_name_b", "Base B")
         
         if df_a is None or df_b is None:
-            st.error("Debes cargar Base A y Base B.")
+            st.error(f"Debes cargar {base_name_a} y {base_name_b}.")
         else:
             # Aplicar normalización si está activada
             if st.session_state.get("normalize_data", False):
@@ -575,10 +579,12 @@ with tab3:
             keys_b = st.session_state.get("join_keys_b", [])
             key_a = st.session_state.get("join_key_a")
             key_b = st.session_state.get("join_key_b")
+            base_name_a = st.session_state.get("base_name_a", "Base A")
+            base_name_b = st.session_state.get("base_name_b", "Base B")
             
             if use_multiple_flag:
                 if not keys_a or not keys_b:
-                    st.error("Debes seleccionar las columnas clave para A y B.")
+                    st.error(f"Debes seleccionar las columnas clave para {base_name_a} y {base_name_b}.")
                 elif len(keys_a) != len(keys_b):
                     st.error("El número de columnas clave debe ser igual en ambas bases.")
                 else:
@@ -586,7 +592,7 @@ with tab3:
                     merge_keys_b = keys_b
             else:
                 if not key_a or not key_b:
-                    st.error("Debes seleccionar las columnas clave para A y B.")
+                    st.error(f"Debes seleccionar las columnas clave para {base_name_a} y {base_name_b}.")
                 else:
                     merge_keys_a = key_a
                     merge_keys_b = key_b
