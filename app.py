@@ -129,7 +129,8 @@ with tab1:
     col_a, col_b = st.columns(2)
     
     with col_a:
-        st.subheader("Base A")
+        base_name_a_display = st.session_state.get("base_name_a", "Base A")
+        st.subheader(base_name_a_display)
         uploaded_a = st.file_uploader(
             "Sube archivo A (.csv o .xlsx)", type=["csv", "xlsx", "xls"], key="upload_a"
         )
@@ -183,7 +184,8 @@ with tab1:
                 st.session_state["df_a"] = None
     
     with col_b:
-        st.subheader("Base B")
+        base_name_b_display = st.session_state.get("base_name_b", "Base B")
+        st.subheader(base_name_b_display)
         uploaded_b = st.file_uploader(
             "Sube archivo B (.csv o .xlsx)", type=["csv", "xlsx", "xls"], key="upload_b"
         )
