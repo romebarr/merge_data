@@ -12,10 +12,13 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def validate_file_size(uploaded_file, max_size_mb: int = 100) -> bool:
-    """Validate file size doesn't exceed maximum."""
+def validate_file_size(uploaded_file, max_size_mb: int = None) -> bool:
+    """Validate file size doesn't exceed maximum. If max_size_mb is None, no validation is performed."""
     if uploaded_file is None:
         return False
+    # Si max_size_mb es None, no validar tamaño (sin límite)
+    if max_size_mb is None:
+        return True
     size_bytes = uploaded_file.size
     size_mb = size_bytes / (1024 * 1024)
     if size_mb > max_size_mb:
@@ -23,25 +26,26 @@ def validate_file_size(uploaded_file, max_size_mb: int = 100) -> bool:
     return True
 
 
-def load_file(uploaded_file, max_size_mb: int = 100, preserve_format: bool = False) -> pd.DataFrame:
+def load_file(uploaded_file, max_size_mb: int = None, preserve_format: bool = False) -> pd.DataFrame:
     """
     Load a CSV or Excel file-like object into a pandas DataFrame.
 
     - Supports .csv and .xlsx (by extension).
     - Tries to infer encoding for CSV using pandas defaults.
-    - Validates file size.
+    - Validates file size if max_size_mb is provided (None = sin límite).
     
     Args:
         uploaded_file: File-like object to read
-        max_size_mb: Maximum file size in MB
+        max_size_mb: Maximum file size in MB (None = sin límite)
         preserve_format: If True, reads all columns as text to preserve original formats.
                         If False, pandas will infer data types automatically.
     """
     if uploaded_file is None:
         raise ValueError("No file provided")
 
-    # Validar tamaño
-    validate_file_size(uploaded_file, max_size_mb)
+    # Validar tamaño solo si se especifica un límite
+    if max_size_mb is not None:
+        validate_file_size(uploaded_file, max_size_mb)
     
     # Validar extensión
     name = getattr(uploaded_file, "name", "").lower()

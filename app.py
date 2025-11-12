@@ -67,7 +67,8 @@ init_state()
 with st.sidebar:
     st.header("⚙️ Configuración")
     
-    max_file_size = st.number_input("Tamaño máximo de archivo (MB)", min_value=10, max_value=500, value=100, step=10)
+    # Límite de tamaño deshabilitado - sin restricciones
+    max_file_size = None
     
     preserve_format_flag = st.checkbox(
         "Preservar formatos originales (leer todo como texto)", 
@@ -145,7 +146,7 @@ with tab1:
                 
                 with st.spinner(f"Cargando {base_name_display_a}..."):
                     preserve_format = st.session_state.get("preserve_format", True)
-                    df_a = load_file(uploaded_a, max_size_mb=max_file_size, preserve_format=preserve_format)
+                    df_a = load_file(uploaded_a, max_size_mb=None, preserve_format=preserve_format)
                     st.session_state["df_a"] = df_a
                     
                     # Analizar calidad de datos
@@ -201,7 +202,7 @@ with tab1:
                 
                 with st.spinner(f"Cargando {base_name_display_b}..."):
                     preserve_format = st.session_state.get("preserve_format", True)
-                    df_b = load_file(uploaded_b, max_size_mb=max_file_size, preserve_format=preserve_format)
+                    df_b = load_file(uploaded_b, max_size_mb=None, preserve_format=preserve_format)
                     st.session_state["df_b"] = df_b
                     
                     # Analizar calidad de datos
