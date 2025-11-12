@@ -67,7 +67,7 @@ init_state()
 with st.sidebar:
     st.header("⚙️ Configuración")
     
-    max_file_size = st.number_input("Tamaño máximo de archivo (MB)", min_value=10, max_value=500, value=100, step=10)
+    max_file_size = st.number_input("Tamaño máximo de archivo (MB)", min_value=10, max_value=2000, value=800, step=10)
     
     preserve_format_flag = st.checkbox(
         "Preservar formatos originales (leer todo como texto)", 
